@@ -15,7 +15,6 @@ def filter_instances(project):
 
     return instances
 
-
 @click.group()
 def cli():
     """Shotty manages snapshots"""
@@ -42,7 +41,6 @@ def list_snapshots(project):
                     s.progress,
                     s.start_time.strftime("%c")
                 )))
-
     return
 
 @cli.group('volumes')
@@ -123,6 +121,32 @@ def start_instances(project):
 
     return
 
+@instances.command('snapshot')
+@click.option('--project', default=None,
+    help='Create snapshots of all volumes')
+def create_snapshots(project):
+    "Create snapshots for EC2 instances"
+
+    instances = filter_instances(project)
+
+    for i in instances:
+        print("Stopping instance {0} ...".format(i.id))
+
+        i.stop()
+        i.wait_until_stopped()
+
+        for v in i.volumes.all():
+            print("Creating snapshot of volume {0} ...".format(v.id))
+            v.create_snapshot(Description="Created by Shapshotalyzer 30000")
+
+        print("Starting EC2 instance {0} ...".format(i.id))
+
+        i.start()
+        i.wait_until_running()
+
+    print("Done creating volume snapshots!")
+
+    return
 
 if __name__ == '__main__':
     cli()
